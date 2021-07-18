@@ -1,35 +1,37 @@
-const express = require('express')
-const path = require('path')
-const graphqlHTTP = require('express-graphql')
-const sequelize = require('./utils/database')
-const schema = require('./graphql/schema')
-const resolver = require('./graphql/resolver')
-const cors = require('cors')
-const app = express()
-const PORT = process.env.PORT || 3000
+const { ApolloServer } = require('apollo-server');
+const jwt =  require('jsonwebtoken');
+const typeDefs = require('./schema/schema');
+const resolvers = require('./resolvers/resolvers');
 
+require('dotenv').config();
 
-app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')))
-app.use(express.json())
+const { JWT_SECRET, PORT } = process.env;
 
-app.use(graphqlHTTP({
-  schema: schema,
-  rootValue: resolver,
-  graphiql: true
-}))
-
-app.use((req, res, next) => {
-  res.sendFile('/index.html')
-})
-
-async function start() {
+const getUser = token => {
   try {
-    await sequelize.sync()
-    app.listen(PORT)
-  } catch (e) {
-    console.log(e)
+    if (token) {
+      return jwt.verify(token, JWT_SECRET)
+    }
+    return null
+  } catch (error) {
+    return null
   }
 }
 
-start();
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: ({ req }) => {
+    const token = req.get('Authorization') || ''
+    return { user: getUser(token.replace('Bearer', ''))}
+  },
+  fetchOptions: {
+    mode: 'no-cors'
+  },
+  introspection: true,
+  playground: true
+})
+
+server.listen({ port: process.env.PORT || 5000 }).then(({ url }) => {
+  console.log(`🚀 Server ready at ${url}`);
+});
