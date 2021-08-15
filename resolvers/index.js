@@ -4,7 +4,7 @@ const models = require('../models')
 
 require('dotenv').config()
 
-const resolvers = {
+const index = {
   Query: {
     async me(_, args, { user }) {
       if(!user) throw new Error('You are not authenticated')
@@ -31,6 +31,7 @@ const resolvers = {
     },
 
     async getPosts(root, args, { user }) {
+      console.log(user)
       try {
         if (!user) throw new Error('You are not authenticated!')
         return await models.Post.findAll()
@@ -136,4 +137,4 @@ const resolvers = {
   }
 }
 
-module.exports = resolvers
+module.exports = index

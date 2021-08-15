@@ -1,7 +1,7 @@
 const { ApolloServer } = require('apollo-server');
 const jwt =  require('jsonwebtoken');
 const typeDefs = require('./schema/schema');
-const resolvers = require('./resolvers/resolvers');
+const resolvers = require('./resolvers');
 
 require('dotenv').config();
 
@@ -22,7 +22,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
-    const token = req.get('Authorization') || ''
+    const token = req.get('Authorization') || '';
     return { user: getUser(token.replace('Bearer', ''))}
   },
   fetchOptions: {
@@ -32,6 +32,6 @@ const server = new ApolloServer({
   playground: true
 })
 
-server.listen({ port: process.env.PORT || 5000 }).then(({ url }) => {
+server.listen({ port: PORT || 5000 }).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
 });
