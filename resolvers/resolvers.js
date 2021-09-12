@@ -6,6 +6,7 @@ require('dotenv').config()
 
 const resolvers = {
   Query: {
+    // User
     async me(_, args, { user }) {
       if(!user) throw new Error('You are not authenticated')
 
@@ -30,6 +31,7 @@ const resolvers = {
       }
     },
 
+    // Post
     async getPosts(root, args, { user }) {
       try {
         if (!user) throw new Error('You are not authenticated!')
@@ -50,6 +52,7 @@ const resolvers = {
   },
 
   Mutation: {
+    // User
     async registerUser(root, { username, email, password }) {
       try {
         const user = await models.User.create({
@@ -98,6 +101,27 @@ const resolvers = {
       }
     },
 
+    async updateProfile(root, user) {
+      try {
+        console.log('user', user)
+
+        const updatedUser = await models.User.findByPk(user.id);
+
+        if (!updatedUser) {
+          throw new Error("User doesn't exist");
+        }
+
+        updatedUser.username = user.username || updatedUser.username;
+        updatedUser.email = user.email || updatedUser.email;
+        console.log('updatedUser', updatedUser)
+        await updatedUser.save()
+        return { ...updatedUser }
+      } catch (e) {
+        throw new Error('Id is required')
+      }
+    },
+
+    // Post
     async createPost(root, { post }) {
       const { title, content } = post;
 
