@@ -20,12 +20,21 @@ const typeDefs = gql`
     user: User!
   }
 
+  type Message {
+      uuid: String!
+      content: String!
+      from: String!
+      to: String!
+      createdAt: String!
+  }
+
   type Query {
     user(id: Int!): User
     allUsers: [User!]!
     me: User
     getPosts: [Post!]!
     getPost(id: ID!): Post
+    getMessages(from: String!): [Message]!
   }
 
   input PostInput {
@@ -34,11 +43,16 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    # User
     registerUser(username: String, email: String!, password: String!): AuthPayload!
-    login (email: String!, password: String!): AuthPayload!
-    createPost(list: PostInput!): Post!
+    login(email: String!, password: String!): AuthPayload!
+    updateProfile(id: Int!, email: String, username: String): User!
+    # Post
+    createPost(post: PostInput!): Post!
     updatePost(id: ID!): Post!
     deletePost(id: ID!): Boolean!
+    # Message
+    sendMessage(to: String!, content: String!): Message!
   }
 `
 

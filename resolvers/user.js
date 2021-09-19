@@ -1,20 +1,20 @@
-const bcrypt = require('bcryptjs')
-const jsonwebtoken = require('jsonwebtoken')
-const models = require('../models')
+const { AuthenticationError } = require('apollo-server');
+const bcrypt = require('bcryptjs');
+const jsonwebtoken = require('jsonwebtoken');
+const models = require('../models');
 
-require('dotenv').config()
-
-const resolvers = {
+module.exports = {
   Query: {
     async me(_, args, { user }) {
-      if(!user) throw new Error('You are not authenticated')
+      if (!user) throw new AuthenticationError('Unauthenticated')
 
       return await models.User.findByPk(user.id)
     },
 
     async user(root, { id }, { user }) {
       try {
-        if(!user) throw new Error('You are not authenticated!')
+        if (!user) throw new AuthenticationError('Unauthenticated')
+
         return models.User.findByPk(id)
       } catch (error) {
         throw new Error(error.message)
@@ -28,27 +28,8 @@ const resolvers = {
       } catch (error) {
         throw new Error(error.message)
       }
-    },
-
-    async getPosts(root, args, { user }) {
-      try {
-        if (!user) throw new Error('You are not authenticated!')
-        return await models.Post.findAll()
-      } catch (e) {
-        throw new Error('Fetch posts is not available')
-      }
-    },
-
-    async getPost(root, { id }, { user }) {
-      try {
-        if (!user) throw new Error('You are not authenticated!');
-        return await models.Post.findByPk(id);
-      } catch (e) {
-        throw new Error('Fetch post is not available')
-      }
     }
   },
-
   Mutation: {
     async registerUser(root, { username, email, password }) {
       try {
@@ -98,42 +79,21 @@ const resolvers = {
       }
     },
 
-    async createPost(root, { post }) {
-      const { title, content } = post;
-
+    async updateProfile(root, { username, email, id }) {
       try {
-        return await models.Post.create({
-          title, content
-        })
-      } catch (e) {
-        throw new Error('Title is required')
-      }
-    },
+        const updatedUser = await models.User.findByPk(id);
 
-    async updatePost(root, { id }) {
-      try {
-        const post = await models.Post.findByPk(id)
-        // list.done = true
-        await post.save()
-        return post
+        if (!updatedUser) {
+          throw new Error("User doesn't exist");
+        }
+
+        updatedUser.username = username || updatedUser.username;
+        updatedUser.email = email || updatedUser.email;
+        await updatedUser.save();
+        return updatedUser;
       } catch (e) {
         throw new Error('Id is required')
-      }
-    },
-
-    async deletePost(root, { id }) {
-      try {
-        const posts = await models.Post.findAll({
-          where: {id}
-        })
-        await posts[0].destroy()
-        return true
-      } catch (e) {
-        throw new Error('Id is required')
-        return false
       }
     }
   }
 }
-
-module.exports = resolvers
