@@ -9,10 +9,20 @@ const typeDefs = gql`
     updatedAt: String
   }
 
+  type Message {
+    uuid: String!
+    content: String!
+    from: String!
+    to: String!
+    createdAt: String!
+  }
+
   type User {
     id: Int!
-    username: String
-    email: String!
+    username: String!
+    createdAt: String!
+    email: String
+    latestMessage: Message
   }
 
   type AuthPayload {
@@ -20,17 +30,9 @@ const typeDefs = gql`
     user: User!
   }
 
-  type Message {
-      uuid: String!
-      content: String!
-      from: String!
-      to: String!
-      createdAt: String!
-  }
-
   type Query {
     user(id: Int!): User
-    allUsers: [User!]!
+    getUsers: [User!]!
     me: User
     getPosts: [Post!]!
     getPost(id: ID!): Post
