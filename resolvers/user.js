@@ -1,6 +1,8 @@
 const { AuthenticationError } = require('apollo-server');
 const bcrypt = require('bcryptjs');
 const jsonwebtoken = require('jsonwebtoken');
+const { Op } = require('sequelize');
+
 const models = require('../models');
 
 module.exports = {
@@ -21,10 +23,32 @@ module.exports = {
       }
     },
 
-    async allUsers(root, args, { user }) {
+    async getUsers(_, __, { user }) {
       try {
         if (!user) throw new Error('You are not authenticated!')
-        return models.User.findAll()
+
+        let users = await models.User.findAll({
+          raw: true,
+          attributes: ['id', 'username', 'createdAt'],
+          where: { id: { [Op.ne]: user.id } }
+        })
+
+        const allUserMessages = await models.Message.findAll({
+          raw: true,
+          where: {
+            [Op.or]: [{ from: user.id || '' }, { to: user.id || '' }],
+          },
+          order: [['createdAt', 'DESC']]
+        })
+
+        return users ? users.map((otherUser) => {
+          const currentOtherUser = { ...otherUser };
+
+          currentOtherUser.latestMessage = allUserMessages.find(
+            (m) => +m.from === +currentOtherUser.id || +m.to === +currentOtherUser.id
+          );
+          return currentOtherUser;
+        }) : [];
       } catch (error) {
         throw new Error(error.message)
       }
