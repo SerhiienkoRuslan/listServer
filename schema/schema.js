@@ -15,6 +15,15 @@ const typeDefs = gql`
     from: String!
     to: String!
     createdAt: String!
+    reactions: [Reaction]
+  }
+
+  type Reaction {
+    uuid: String!
+    content: String!
+    createdAt: String!
+    message: Message!
+    user: User!
   }
 
   type User {
@@ -36,7 +45,7 @@ const typeDefs = gql`
     me: User
     getPosts: [Post!]!
     getPost(id: ID!): Post
-    getMessages(from: String!): [Message]!
+    getMessages(id: Int!): [Message]!
   }
 
   input PostInput {
@@ -54,7 +63,13 @@ const typeDefs = gql`
     updatePost(id: ID!): Post!
     deletePost(id: ID!): Boolean!
     # Message
-    sendMessage(to: String!, content: String!): Message!
+    sendMessage(to: Int!, content: String!): Message!
+    reactToMessage(uuid: String!, content: String!): Reaction!
+  }
+
+  type Subscription {
+    newMessage: Message
+    newReaction: Reaction!
   }
 `
 

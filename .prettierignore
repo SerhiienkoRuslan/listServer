@@ -1,0 +1,9 @@
+build
+seeders
+.deploy
+.yarn
+migration
+public
+node_modules
+public
+tmp
