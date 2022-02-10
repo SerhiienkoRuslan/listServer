@@ -64,7 +64,7 @@ module.exports = {
 
         const message = await models.Message.create(messageObj);
 
-        await pubsub.publish(NEW_MESSAGE, { newMessage: messageObj, user })
+        await pubsub.publish(NEW_MESSAGE, { newMessage: message, user })
 
         return message
       } catch (err) {
