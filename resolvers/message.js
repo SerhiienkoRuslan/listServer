@@ -4,9 +4,13 @@ const {
   ForbiddenError
 } = require('apollo-server');
 const { Op } = require('sequelize');
-import { withFilter } from 'graphql-subscriptions';
+import { withFilter, PubSub } from 'graphql-subscriptions';
 
 const models = require('../models');
+
+const NEW_MESSAGE = 'NEW_MESSAGE'
+
+const pubsub = new PubSub();
 
 module.exports = {
   Query: {
@@ -22,15 +26,13 @@ module.exports = {
 
         const ids = [user.id, otherUser.id];
 
-        const messages = await models.Message.findAll({
+        return await models.Message.findAll({
           where: {
             from: { [Op.in]: ids },
             to: { [Op.in]: ids },
           },
           order: [['createdAt', 'DESC']]
-        })
-
-        return messages;
+        });
       } catch (err) {
         console.log(err)
         throw err
@@ -38,7 +40,7 @@ module.exports = {
     },
   },
   Mutation: {
-    sendMessage: async (parent, { to, content }, { user, pubsub }) => {
+    sendMessage: async (parent, { to, content }, { user }) => {
       try {
         if (!user) throw new AuthenticationError('Unauthenticated')
 
@@ -54,13 +56,15 @@ module.exports = {
           throw new UserInputError('Message is empty')
         }
 
-        const message = await models.Message.create({
+        const messageObj = {
           from: user.id,
           to,
-          content,
-        });
+          content
+        }
 
-        pubsub.publish('NEW_MESSAGE', { newMessage: message })
+        const message = await models.Message.create(messageObj);
+
+        await pubsub.publish(NEW_MESSAGE, { newMessage: messageObj, user })
 
         return message
       } catch (err) {
@@ -68,7 +72,7 @@ module.exports = {
         throw err
       }
     },
-    reactToMessage: async (_, { uuid, content }, { user, pubsub }) => {
+    reactToMessage: async (_, { uuid, content }, { user }) => {
       const reactions = ['❤️', '😆', '😯', '😢', '😡', '👍', '👎'];
 
       try {
@@ -118,11 +122,8 @@ module.exports = {
   Subscription: {
     newMessage: {
       subscribe: withFilter(
-        (_, __, { user, pubsub }) => {
-          if (!user) throw new AuthenticationError('Unauthenticated');
-          return pubsub.asyncIterator('NEW_MESSAGE');
-        },
-        ({ newMessage }, _, { user }) => {
+        () => pubsub.asyncIterator(NEW_MESSAGE),
+        ({ newMessage, user }) => {
           return +newMessage.from === +user.id ||
             +newMessage.to === +user.id;
         }
@@ -130,10 +131,7 @@ module.exports = {
     },
     newReaction: {
       subscribe: withFilter(
-        (_, __, { pubsub, user }) => {
-          if (!user) throw new AuthenticationError('Unauthenticated');
-          return pubsub.asyncIterator('NEW_REACTION');
-        },
+        () => pubsub.asyncIterator(['NEW_REACTION']),
         async ({ newReaction }, _, { user }) => {
           const message = await newReaction.getMessage();
           return message.from === user.id || message.to === user.id;

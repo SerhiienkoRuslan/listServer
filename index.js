@@ -1,5 +1,12 @@
-const { ApolloServer } = require('apollo-server');
-import { PubSub } from 'graphql-subscriptions';
+const { createServer } = require("http");
+const express = require("express");
+// import cors from "cors";
+const { execute, subscribe } = require("graphql");
+const { ApolloServer } = require("apollo-server-express");
+const { PubSub } = require("graphql-subscriptions");
+const { SubscriptionServer } = require("subscriptions-transport-ws");
+const { makeExecutableSchema } = require("@graphql-tools/schema");
+
 const jwt =  require('jsonwebtoken');
 const typeDefs = require('./schema/schema');
 const resolvers = require('./resolvers');
@@ -17,23 +24,64 @@ const getUser = token => {
   }
 };
 
-const pubsub = new PubSub();
+(async () => {
+  const app = express();
+  const httpServer = createServer(app);
+  const pubsub = new PubSub();
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: ({ req }) => {
-    const token = req.get('Authorization') || '';
-    return { user: getUser(token.replace('Bearer', '')), pubsub }
-  },
-  subscriptions: { path: '/' },
-  fetchOptions: {
-    mode: 'no-cors'
-  },
-  introspection: true,
-  playground: true
-})
+  // app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
-server.listen({ port: PORT || 5000 }).then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+  const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+  const subscriptionServer = SubscriptionServer.create(
+    { schema, execute, subscribe },
+    { server: httpServer, path: '/graphql' }
+  );
+
+  const server = new ApolloServer({
+    schema,
+    context: ({ req }) => {
+      const token = req.get('Authorization') || '';
+      return {
+        user: getUser(token.replace('Bearer', '')),
+        pubsub
+      }
+    },
+    subscriptions: {
+      path: "/",
+      onConnect: () => {
+        console.log("Client connected for subscriptions");
+      },
+      onDisconnect: () => {
+        console.log("Client disconnected from subscriptions");
+      },
+    },
+    plugins: [{
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            subscriptionServer.close();
+          }
+        };
+      }
+    }],
+    fetchOptions: {
+      mode: 'no-cors'
+    },
+    introspection: true,
+    playground: true
+  });
+
+  await server.start();
+
+  server.applyMiddleware({ app });
+
+  httpServer.listen(PORT || 5000, () => {
+    console.log(
+      `🚀 Query endpoint ready at http://localhost:${PORT}${server.graphqlPath}`
+    );
+    console.log(
+      `🚀 Subscription endpoint ready at ws://localhost:${PORT}${server.graphqlPath}`
+    );
+  });
+})();
