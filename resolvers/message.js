@@ -46,6 +46,7 @@ module.exports = {
         if (!user) throw new AuthenticationError('Unauthenticated')
 
         const recipient = await models.User.findOne({ where: { _id: to } })
+        const current = await models.User.findOne({ where: { _id: user._id } })
 
         if (!recipient) {
           throw new UserInputError('User not found')
@@ -62,12 +63,12 @@ module.exports = {
           from: user._id,
           to,
           text,
-          userId: recipient._id
+          userId: user._id
         }
 
         const message = await models.Message.create(messageObj, { include: ['user'] });
 
-        await pubsub.publish(NEW_MESSAGE, { newMessage: { ...message.dataValues, user: recipient }, user })
+        await pubsub.publish(NEW_MESSAGE, { newMessage: { ...message.dataValues, user: current.dataValues }, user })
 
         return message
       } catch (err) {
@@ -127,6 +128,7 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator(NEW_MESSAGE),
         ({ newMessage, user }) => {
+          console.log(newMessage)
           return +newMessage.from === +user._id ||
             +newMessage.to === +user._id;
         }
