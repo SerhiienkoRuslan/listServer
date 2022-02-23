@@ -8,16 +8,20 @@ const models = require('../models');
 module.exports = {
   Query: {
     async me(_, args, { user }) {
-      if (!user) throw new AuthenticationError('Unauthenticated')
-
-      return await models.User.findByPk(user.id)
-    },
-
-    async user(root, { id }, { user }) {
       try {
         if (!user) throw new AuthenticationError('Unauthenticated')
 
-        return models.User.findByPk(id)
+        return await models.User.findByPk(user._id)
+      } catch (e) {
+        console.log(e)
+      }
+    },
+
+    async user(root, { _id }, { user }) {
+      try {
+        if (!user) throw new AuthenticationError('Unauthenticated')
+
+        return models.User.findByPk(_id)
       } catch (error) {
         throw new Error(error.message)
       }
@@ -29,14 +33,14 @@ module.exports = {
 
         let users = await models.User.findAll({
           raw: true,
-          attributes: ['id', 'username', 'createdAt'],
-          where: { id: { [Op.ne]: user.id } }
+          attributes: ['_id', 'name', 'createdAt'],
+          where: { _id: { [Op.ne]: user._id } }
         })
 
         const allUserMessages = await models.Message.findAll({
           raw: true,
           where: {
-            [Op.or]: [{ from: user.id || '' }, { to: user.id || '' }],
+            [Op.or]: [{ from: user._id || '' }, { to: user._id || '' }],
           },
           order: [['createdAt', 'DESC']]
         })
@@ -45,7 +49,7 @@ module.exports = {
           const currentOtherUser = { ...otherUser };
 
           currentOtherUser.latestMessage = allUserMessages.find(
-            (m) => +m.from === +currentOtherUser.id || +m.to === +currentOtherUser.id
+            (m) => +m.from === +currentOtherUser._id || +m.to === +currentOtherUser._id
           );
           return currentOtherUser;
         }) : [];
@@ -55,24 +59,25 @@ module.exports = {
     }
   },
   Mutation: {
-    async registerUser(root, { username, email, password }) {
+    async registerUser(root, { name, email, password }) {
       try {
         const user = await models.User.create({
-          username,
+          name,
           email,
           password: await bcrypt.hash(password, 10)
         });
 
         const token = jsonwebtoken.sign(
-          { id: user.id, email: user.email},
+          { _id: user._id, email: user.email},
           process.env.JWT_SECRET,
           { expiresIn: '1y' }
         );
 
         return {
-          token, id: user.id, username: user.username, email: user.email, message: "Authentication successfully"
+          token, _id: user._id, name: user.name, email: user.email, message: "Authentication successfully"
         }
       } catch (error) {
+        console.log(error)
         throw new Error(error.message)
       }
     },
@@ -92,7 +97,7 @@ module.exports = {
         }
 
         const token = jsonwebtoken.sign(
-          { id: user.id, email: user.email},
+          { _id: user._id, email: user.email},
           process.env.JWT_SECRET,
           { expiresIn: '1d'}
         )
@@ -103,15 +108,15 @@ module.exports = {
       }
     },
 
-    async updateProfile(root, { username, email, id }) {
+    async updateProfile(root, { name, email, _id }) {
       try {
-        const updatedUser = await models.User.findByPk(id);
+        const updatedUser = await models.User.findByPk(_id);
 
         if (!updatedUser) {
           throw new Error("User doesn't exist");
         }
 
-        updatedUser.username = username || updatedUser.username;
+        updatedUser.name = name || updatedUser.name;
         updatedUser.email = email || updatedUser.email;
         await updatedUser.save();
         return updatedUser;

@@ -14,24 +14,25 @@ const pubsub = new PubSub();
 
 module.exports = {
   Query: {
-    getMessages: async (parent, { id }, { user }) => {
+    getMessages: async (parent, { _id }, { user }) => {
       try {
         if (!user) throw new AuthenticationError('Unauthenticated');
 
         const otherUser = await models.User.findOne({
-          where: { id }
+          where: { _id }
         });
 
         if (!otherUser) throw new UserInputError('User not found');
 
-        const ids = [user.id, otherUser.id];
+        const ids = [user._id, otherUser._id];
 
         return await models.Message.findAll({
           where: {
             from: { [Op.in]: ids },
             to: { [Op.in]: ids },
           },
-          order: [['createdAt', 'DESC']]
+          order: [['createdAt', 'DESC']],
+          include: ['user']
         });
       } catch (err) {
         console.log(err)
@@ -40,31 +41,33 @@ module.exports = {
     },
   },
   Mutation: {
-    sendMessage: async (parent, { to, content }, { user }) => {
+    sendMessage: async (parent, { to, text, ...rest }, { user }) => {
       try {
         if (!user) throw new AuthenticationError('Unauthenticated')
 
-        const recipient = await models.User.findOne({ where: { id: to } })
+        const recipient = await models.User.findOne({ where: { _id: to } })
 
         if (!recipient) {
           throw new UserInputError('User not found')
-        } else if (recipient.id === user.id) {
+        } else if (recipient._id === user._id) {
           throw new UserInputError('You cant message yourself')
         }
 
-        if (content.trim() === '') {
+        if (text.trim() === '') {
           throw new UserInputError('Message is empty')
         }
 
         const messageObj = {
-          from: user.id,
+          ...rest,
+          from: user._id,
           to,
-          content
+          text,
+          userId: recipient._id
         }
 
-        const message = await models.Message.create(messageObj);
+        const message = await models.Message.create(messageObj, { include: ['user'] });
 
-        await pubsub.publish(NEW_MESSAGE, { newMessage: message, user })
+        await pubsub.publish(NEW_MESSAGE, { newMessage: { ...message.dataValues, user: recipient }, user })
 
         return message
       } catch (err) {
@@ -82,20 +85,20 @@ module.exports = {
         }
 
         // Get user
-        const userId = user ? user.id : '';
-        user = await models.User.findOne({ where: { id: userId } });
+        const userId = user ? user._id : '';
+        user = await models.User.findOne({ where: { _id: userId } });
         if (!user) throw new AuthenticationError('Unauthenticated');
 
         // Get message
         const message = await models.Message.findOne({ where: { uuid } });
         if (!message) throw new UserInputError('message not found');
 
-        if (message.from !== user.id && message.to !== user.id) {
+        if (message.from !== user._id && message.to !== user._id) {
           throw new ForbiddenError('Unauthorized')
         }
 
         let reaction = await models.Reaction.findOne({
-          where: { messageId: message.id, userId: user.id },
+          where: { messageId: message._id, userId: user._id },
         })
 
         if (reaction) {
@@ -105,8 +108,8 @@ module.exports = {
         } else {
           // Reaction doesnt exists, create it
           reaction = await models.Reaction.create({
-            messageId: message.id,
-            userId: user.id,
+            messageId: message._id,
+            userId: user._id,
             content,
           })
         }
@@ -124,8 +127,8 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator(NEW_MESSAGE),
         ({ newMessage, user }) => {
-          return +newMessage.from === +user.id ||
-            +newMessage.to === +user.id;
+          return +newMessage.from === +user._id ||
+            +newMessage.to === +user._id;
         }
       )
     },
@@ -134,7 +137,7 @@ module.exports = {
         () => pubsub.asyncIterator(['NEW_REACTION']),
         async ({ newReaction }, _, { user }) => {
           const message = await newReaction.getMessage();
-          return message.from === user.id || message.to === user.id;
+          return message.from === user._id || message.to === user._id;
         }
       ),
     }

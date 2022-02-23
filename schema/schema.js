@@ -2,18 +2,28 @@ const { gql } = require('apollo-server')
 
 const typeDefs = gql`
   type Post {
-    id: ID!
+    id: Int!
     title: String!
     content: String!
     createdAt: String
     updatedAt: String
   }
+  
+  type User {
+    _id: Int!
+    name: String!
+    createdAt: String!
+    email: String
+    latestMessage: Message
+    avatar: String
+  }
 
   type Message {
-    uuid: String!
-    content: String!
+    _id: Int!
+    text: String!
     from: String!
     to: String!
+    user: User!
     createdAt: String!
     reactions: [Reaction]
   }
@@ -26,26 +36,18 @@ const typeDefs = gql`
     user: User!
   }
 
-  type User {
-    id: Int!
-    username: String!
-    createdAt: String!
-    email: String
-    latestMessage: Message
-  }
-
   type AuthPayload {
     token: String!
     user: User!
   }
 
   type Query {
-    user(id: Int!): User
+    user(_id: Int!): User
     getUsers: [User!]!
     me: User
     getPosts: [Post!]!
-    getPost(id: ID!): Post
-    getMessages(id: Int!): [Message]!
+    getPost(id: Int!): Post
+    getMessages(_id: Int!): [Message]!
   }
 
   input PostInput {
@@ -55,15 +57,15 @@ const typeDefs = gql`
 
   type Mutation {
     # User
-    registerUser(username: String, email: String!, password: String!): AuthPayload!
+    registerUser(name: String, email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
-    updateProfile(id: Int!, email: String, username: String): User!
+    updateProfile(_id: Int!, email: String, name: String): User!
     # Post
     createPost(post: PostInput!): Post!
     updatePost(id: ID!): Post!
     deletePost(id: ID!): Boolean!
     # Message
-    sendMessage(to: Int!, content: String!): Message!
+    sendMessage(to: Int!, text: String!): Message!
     reactToMessage(uuid: String!, content: String!): Reaction!
   }
 

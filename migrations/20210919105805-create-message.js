@@ -2,19 +2,14 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('messages', {
-      id: {
+      _id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      content: {
+      text: {
         type: Sequelize.STRING,
-        allowNull: false
-      },
-      uuid: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
         allowNull: false
       },
       from: {
@@ -32,6 +27,34 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
+      },
+      image: {
+        type: Sequelize.STRING
+      },
+      audio: {
+        type: Sequelize.STRING
+      },
+      video: {
+        type: Sequelize.STRING
+      },
+      system: {
+        type: Sequelize.BOOLEAN
+      },
+      sent: {
+        type: Sequelize.BOOLEAN
+      },
+      received: {
+        type: Sequelize.BOOLEAN
+      },
+      pending: {
+        type: Sequelize.BOOLEAN
+      },
+      userId: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'users',
+          key: '_id'
+        }
       }
     });
   },
