@@ -15,9 +15,9 @@ const pubsub = new PubSub();
 module.exports = {
   Query: {
     getMessages: async (parent, { _id }, { user }) => {
-      try {
-        if (!user) throw new AuthenticationError('Unauthenticated');
+      if (!user) throw new AuthenticationError('Unauthenticated!');
 
+      try {
         const otherUser = await models.User.findOne({
           where: { _id }
         });
@@ -35,16 +35,15 @@ module.exports = {
           include: ['user']
         });
       } catch (err) {
-        console.log(err)
         throw err
       }
     },
   },
   Mutation: {
     sendMessage: async (parent, { to, text, ...rest }, { user }) => {
-      try {
-        if (!user) throw new AuthenticationError('Unauthenticated')
+      if (!user) throw new AuthenticationError('Unauthenticated!')
 
+      try {
         const recipient = await models.User.findOne({ where: { _id: to } })
         const current = await models.User.findOne({ where: { _id: user._id } })
 
@@ -77,6 +76,8 @@ module.exports = {
       }
     },
     reactToMessage: async (_, { uuid, content }, { user }) => {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       const reactions = ['❤️', '😆', '😯', '😢', '😡', '👍', '👎'];
 
       try {
@@ -88,7 +89,7 @@ module.exports = {
         // Get user
         const userId = user ? user._id : '';
         user = await models.User.findOne({ where: { _id: userId } });
-        if (!user) throw new AuthenticationError('Unauthenticated');
+        if (!user) throw new AuthenticationError('Unauthenticated!');
 
         // Get message
         const message = await models.Message.findOne({ where: { uuid } });

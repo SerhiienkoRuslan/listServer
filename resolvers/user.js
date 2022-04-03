@@ -8,9 +8,9 @@ const models = require('../models');
 module.exports = {
   Query: {
     async me(_, args, { user }) {
-      try {
-        if (!user) throw new AuthenticationError('Unauthenticated')
+      if (!user) throw new AuthenticationError('Unauthenticated!')
 
+      try {
         return await models.User.findByPk(user._id)
       } catch (e) {
         console.log(e)
@@ -18,9 +18,9 @@ module.exports = {
     },
 
     async user(root, { _id }, { user }) {
-      try {
-        if (!user) throw new AuthenticationError('Unauthenticated')
+      if (!user) throw new AuthenticationError('Unauthenticated!')
 
+      try {
         return models.User.findByPk(_id)
       } catch (error) {
         throw new Error(error.message)
@@ -28,9 +28,9 @@ module.exports = {
     },
 
     async getUsers(_, __, { user }) {
-      try {
-        if (!user) throw new Error('You are not authenticated!')
+      if (!user) throw new AuthenticationError('Unauthenticated!')
 
+      try {
         let users = await models.User.findAll({
           raw: true,
           attributes: ['_id', 'name', 'createdAt'],
@@ -108,7 +108,9 @@ module.exports = {
       }
     },
 
-    async updateProfile(root, { name, email, _id }) {
+    async updateProfile(root, { name, email, _id }, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!')
+
       try {
         const updatedUser = await models.User.findByPk(_id);
 

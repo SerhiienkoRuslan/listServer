@@ -1,10 +1,15 @@
+const {
+  AuthenticationError
+} = require('apollo-server');
+
 const models = require('../models');
 
 module.exports = {
   Query: {
     async getPosts(root, args, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       try {
-        if (!user) throw new Error('You are not authenticated!')
         return await models.Post.findAll()
       } catch (e) {
         throw new Error('Fetch posts is not available')
@@ -12,8 +17,9 @@ module.exports = {
     },
 
     async getPost(root, { id }, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       try {
-        if (!user) throw new Error('You are not authenticated!');
         return await models.Post.findByPk(id);
       } catch (e) {
         throw new Error('Fetch post is not available')
@@ -21,7 +27,9 @@ module.exports = {
     }
   },
   Mutation: {
-    async createPost(root, { post }) {
+    async createPost(root, { post }, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       const { title, content } = post;
 
       try {
@@ -33,7 +41,9 @@ module.exports = {
       }
     },
 
-    async updatePost(root, { id }) {
+    async updatePost(root, { id }, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       try {
         const post = await models.Post.findByPk(id)
         // list.done = true
@@ -44,7 +54,9 @@ module.exports = {
       }
     },
 
-    async deletePost(root, { id }) {
+    async deletePost(root, { id }, { user }) {
+      if (!user) throw new AuthenticationError('Unauthenticated!');
+
       try {
         const posts = await models.Post.findAll({
           where: {id}
