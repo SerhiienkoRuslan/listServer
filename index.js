@@ -1,6 +1,6 @@
 const { createServer } = require("http");
 const express = require("express");
-import cors from "cors";
+const cors = require("cors");
 const { execute, subscribe } = require("graphql");
 const { ApolloServer } = require("apollo-server-express");
 const { PubSub } = require("graphql-subscriptions");
@@ -27,8 +27,6 @@ const getUser = token => {
 const corsOptions = {
   "origin": "*",
   "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-  "preflightContinue": false,
-  "optionsSuccessStatus": 204,
   "allowedHeaders": ["Content-Type"]
 }
 
