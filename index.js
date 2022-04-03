@@ -76,7 +76,7 @@ const getUser = token => {
 
   server.applyMiddleware({ app });
 
-  httpServer.listen(PORT || 5000, () => {
+  httpServer.listen(PORT, () => {
     console.log(
       `🚀 Query endpoint ready at http://localhost:${PORT}${server.graphqlPath}`
     );
