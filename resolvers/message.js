@@ -4,7 +4,7 @@ const {
   ForbiddenError
 } = require('apollo-server');
 const { Op } = require('sequelize');
-import { withFilter, PubSub } from 'graphql-subscriptions';
+const { withFilter, PubSub } = require('graphql-subscriptions');
 
 const models = require('../models');
 
