@@ -1,6 +1,6 @@
 const { createServer } = require("http");
 const express = require("express");
-// import cors from "cors";
+import cors from "cors";
 const { execute, subscribe } = require("graphql");
 const { ApolloServer } = require("apollo-server-express");
 const { PubSub } = require("graphql-subscriptions");
@@ -24,12 +24,17 @@ const getUser = token => {
   }
 };
 
+const corsOptions = {
+  origin: ['*'],
+  credentials: true,
+};
+
 (async () => {
   const app = express();
   const httpServer = createServer(app);
   const pubsub = new PubSub();
 
-  // app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+  app.use(cors(corsOptions));
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
 
