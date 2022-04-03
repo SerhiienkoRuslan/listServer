@@ -35,7 +35,7 @@ module.exports = {
           include: ['user']
         });
       } catch (err) {
-        throw err
+        throw new Error(err)
       }
     },
   },
@@ -71,8 +71,7 @@ module.exports = {
 
         return message
       } catch (err) {
-        console.log(err)
-        throw err
+        throw new Error(err)
       }
     },
     reactToMessage: async (_, { uuid, content }, { user }) => {
@@ -120,7 +119,7 @@ module.exports = {
 
         return reaction
       } catch (err) {
-        throw err
+        throw new Error(err)
       }
     }
   },
