@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+// for dev
 const dbDetails = {
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
@@ -8,6 +9,7 @@ const dbDetails = {
   dialect: 'mysql'
 }
 
+// for prod
 const dbDetailsProd = {
   username: 'root',
   password: null,
