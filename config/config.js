@@ -9,7 +9,6 @@ const dbDetails = {
   dialect: 'mysql'
 }
 
-// for prod
 const dbDetailsProd = {
   host: 'eu-cdbr-west-02.cleardb.net',
   user: 'baef10bb942aa4',
