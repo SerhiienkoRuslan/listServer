@@ -11,10 +11,10 @@ const dbDetails = {
 
 // for prod
 const dbDetailsProd = {
-  HOST: 'eu-cdbr-west-02.cleardb.net',
-  USER: 'baef10bb942aa4',
-  PASSWORD: '2df4469f',
-  DB: 'heroku_8f8fa8607d3081d',
+  host: 'eu-cdbr-west-02.cleardb.net',
+  user: 'baef10bb942aa4',
+  password: '2df4469f',
+  database: 'heroku_8f8fa8607d3081d',
   dialect: 'mysql'
 }
 
