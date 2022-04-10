@@ -12,7 +12,7 @@ const dbDetailsProd = {
   username: 'root',
   password: null,
   database: 'database',
-  dialect: 'mysql'
+  dialect: 'postgres'
 }
 
 module.exports = {
