@@ -11,7 +11,7 @@ const dbDetails = {
 
 const dbDetailsProd = {
   host: 'eu-cdbr-west-02.cleardb.net',
-  user: 'baef10bb942aa4',
+  username: 'baef10bb942aa4',
   password: '2df4469f',
   database: 'heroku_8f8fa8607d3081d',
   dialect: 'mysql'
